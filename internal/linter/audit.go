@@ -2,6 +2,8 @@ package linter
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -79,11 +81,41 @@ func Audit(pkg *archive.Package, opts Options) (*Report, error) {
 		if timeout <= 0 {
 			timeout = 60 * time.Second
 		}
-		rep.VisualGate = runVisualGate(opts.WorkDir, timeout)
+		docxPath, cleanup, err := resolveVisualInput(pkg, opts)
+		if err != nil {
+			rep.VisualGate = VisualResult{Status: "error", Reason: err.Error(), PNGPaths: []string{}}
+		} else {
+			rep.VisualGate = runVisualGate(docxPath, opts.WorkDir, timeout, opts.KeepVisual)
+			if cleanup != "" && !opts.KeepVisual && rep.VisualGate.Status != "ok" {
+				_ = os.Remove(cleanup)
+			}
+		}
 	}
 
 	rep.finalize(opts.Strict)
 	return rep, nil
+}
+
+func resolveVisualInput(pkg *archive.Package, opts Options) (path string, tempFile string, err error) {
+	if opts.InputPath != "" {
+		return opts.InputPath, "", nil
+	}
+	dir := opts.WorkDir
+	if dir == "" {
+		dir, err = os.MkdirTemp("", "docxcraft-visual-in-*")
+		if err != nil {
+			return "", "", fmt.Errorf("visual input tmpdir: %w", err)
+		}
+	}
+	path = filepath.Join(dir, "document.docx")
+	data, err := pkg.SaveToBytes()
+	if err != nil {
+		return "", "", err
+	}
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return "", "", err
+	}
+	return path, path, nil
 }
 
 func fatalReport(profileName, code, msg string) *Report {
@@ -141,13 +173,6 @@ func runStructural(body *etree.Element, rep *Report) {
 				})
 			}
 		}
-		if isEmptyParagraph(p) {
-			rep.add(Issue{
-				Code: "DF-004", Severity: "error", AnchorID: id, Location: locationDoc,
-				Message: "Empty paragraph used for vertical spacing",
-				SuggestedFix: "Remove empty paragraph; use w:spacing instead",
-			})
-		}
 		if hasBrokenTemplate(p) {
 			rep.add(Issue{
 				Code: "DF-017", Severity: "warning", AnchorID: id, Location: locationDoc,
@@ -158,7 +183,8 @@ func runStructural(body *etree.Element, rep *Report) {
 	}
 
 	checkHeadingHierarchy(paras, rep)
-	checkTables(body, nil, rep) // content width filled in profile pass
+	checkEmptyParagraphGaps(body, rep)
+	checkTables(body, nil, rep)
 	checkTrackedChanges(body, rep)
 }
 
@@ -167,7 +193,7 @@ func runProfileRules(body *etree.Element, res *profile.Resolved, rep *Report) {
 	if sect != nil {
 		checkPageGeometry(sect, res, rep)
 	}
-	checkTables(body, res, rep)
+	checkTableContentWidth(body, res, rep)
 	checkTypography(body, res, rep)
 }
 
@@ -257,11 +283,98 @@ func checkHeadingHierarchy(paras []*etree.Element, rep *Report) {
 	}
 }
 
+// checkEmptyParagraphGaps flags DF-004 only for empty body-level paragraphs
+// sandwiched between non-empty blocks (not leading/trailing spacers alone).
+func checkEmptyParagraphGaps(body *etree.Element, rep *Report) {
+	type block struct {
+		el    *etree.Element
+		empty bool
+		kind  string // p or tbl
+	}
+	var blocks []block
+	for _, c := range body.ChildElements() {
+		switch c.Tag {
+		case "p":
+			blocks = append(blocks, block{el: c, empty: isEmptyParagraph(c), kind: "p"})
+		case "tbl":
+			blocks = append(blocks, block{el: c, empty: false, kind: "tbl"})
+		}
+	}
+	for i, b := range blocks {
+		if b.kind != "p" || !b.empty {
+			continue
+		}
+		hasBefore, hasAfter := false, false
+		for j := i - 1; j >= 0; j-- {
+			if !blocks[j].empty {
+				hasBefore = true
+				break
+			}
+		}
+		for j := i + 1; j < len(blocks); j++ {
+			if !blocks[j].empty {
+				hasAfter = true
+				break
+			}
+		}
+		if hasBefore && hasAfter {
+			rep.add(Issue{
+				Code: "DF-004", Severity: "error", AnchorID: paraID(b.el), Location: locationDoc,
+				Message: "Empty paragraph used for vertical spacing between content",
+				SuggestedFix: "Remove empty paragraph; use w:spacing instead",
+			})
+		}
+	}
+}
+
 func checkTables(body *etree.Element, res *profile.Resolved, rep *Report) {
+	_ = res
 	var walk func(*etree.Element)
 	walk = func(el *etree.Element) {
 		if el.Tag == "tbl" {
-			auditTable(el, res, rep)
+			auditTable(el, nil, rep)
+			return
+		}
+		for _, c := range el.ChildElements() {
+			walk(c)
+		}
+	}
+	walk(body)
+}
+
+func checkTableContentWidth(body *etree.Element, res *profile.Resolved, rep *Report) {
+	if res == nil {
+		return
+	}
+	var walk func(*etree.Element)
+	walk = func(el *etree.Element) {
+		if el.Tag == "tbl" {
+			anchor := tableAnchor(el)
+			var gridCols []int
+			for _, c := range el.ChildElements() {
+				if c.Tag != "tblGrid" {
+					continue
+				}
+				for _, g := range c.ChildElements() {
+					if g.Tag == "gridCol" {
+						gridCols = append(gridCols, attrInt(g, "w"))
+					}
+				}
+			}
+			if len(gridCols) == 0 {
+				return
+			}
+			sum := 0
+			for _, w := range gridCols {
+				sum += w
+			}
+			if sum > res.ContentWidthDxa+dxaTol {
+				rep.add(Issue{
+					Code: "DF-007", Severity: "error", AnchorID: anchor, Location: locationDoc,
+					Message: fmt.Sprintf("Table column widths sum %d > content width %d", sum, res.ContentWidthDxa),
+					SuggestedFix: "Recalculate col_widths / tcW in dxa",
+				})
+			}
 			return
 		}
 		for _, c := range el.ChildElements() {
@@ -272,6 +385,7 @@ func checkTables(body *etree.Element, res *profile.Resolved, rep *Report) {
 }
 
 func auditTable(tbl *etree.Element, res *profile.Resolved, rep *Report) {
+	_ = res
 	anchor := tableAnchor(tbl)
 	var gridCols []int
 	var trs []*etree.Element
@@ -300,18 +414,6 @@ func auditTable(tbl *etree.Element, res *profile.Resolved, rep *Report) {
 			Message: "Table missing explicit tblGrid/gridCol widths",
 			SuggestedFix: "Set gridCol and tcW in dxa",
 		})
-	} else if res != nil {
-		sum := 0
-		for _, w := range gridCols {
-			sum += w
-		}
-		if sum > res.ContentWidthDxa+dxaTol {
-			rep.add(Issue{
-				Code: "DF-007", Severity: "error", AnchorID: anchor, Location: locationDoc,
-				Message: fmt.Sprintf("Table column widths sum %d > content width %d", sum, res.ContentWidthDxa),
-				SuggestedFix: "Recalculate col_widths / tcW in dxa",
-			})
-		}
 	}
 
 	for i, tr := range trs {
@@ -539,6 +641,9 @@ func hasBrokenTemplate(p *etree.Element) bool {
 			if strings.Contains(t, "{{") && strings.Contains(t, "}}") {
 				wholeInOne = true
 			}
+			if strings.Contains(t, "{%") && strings.Contains(t, "%}") {
+				wholeInOne = true
+			}
 		}
 		for _, c := range el.ChildElements() {
 			walk(c)
@@ -548,7 +653,9 @@ func hasBrokenTemplate(p *etree.Element) bool {
 	if wholeInOne {
 		return false
 	}
-	return strings.Contains(full, "{{") || strings.Contains(full, "}}")
+	hasOpen := strings.Contains(full, "{{") || strings.Contains(full, "{%")
+	hasClose := strings.Contains(full, "}}") || strings.Contains(full, "%}")
+	return hasOpen && hasClose
 }
 
 func tcHasWidth(tc *etree.Element) bool {

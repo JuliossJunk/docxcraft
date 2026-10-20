@@ -183,7 +183,7 @@ func cmdInspect(cfg *security.Config) *cobra.Command {
 
 func cmdLint(cfg *security.Config) *cobra.Command {
 	var profile string
-	var strict, visual bool
+	var strict, visual, keepVisual bool
 	c := &cobra.Command{
 		Use:   "lint [file.docx]",
 		Short: "Audit .docx against a style profile",
@@ -208,6 +208,8 @@ func cmdLint(cfg *security.Config) *cobra.Command {
 				ProfileName:  profile,
 				Strict:       strict,
 				EnableVisual: visual,
+				InputPath:    path,
+				KeepVisual:   keepVisual,
 			})
 			if err != nil {
 				return err
@@ -221,7 +223,8 @@ func cmdLint(cfg *security.Config) *cobra.Command {
 	}
 	c.Flags().StringVarP(&profile, "profile", "p", "corporate_executive", "style profile")
 	c.Flags().BoolVar(&strict, "strict", false, "treat warnings as errors")
-	c.Flags().BoolVar(&visual, "visual", false, "enable LibreOffice visual gate")
+	c.Flags().BoolVar(&visual, "visual", false, "enable LibreOffice visual gate (PDF+PNG)")
+	c.Flags().BoolVar(&keepVisual, "keep-visual", false, "keep visual gate workdir artifacts")
 	return c
 }
 
@@ -268,6 +271,10 @@ func cmdPatch(cfg *security.Config) *cobra.Command {
 					_ = sess.CloneStyleFrom(copyFrom, ids[0])
 				}
 				fmt.Println(ids)
+			case "delete":
+				if err := sess.DeleteByAnchor(anchorID); err != nil {
+					return err
+				}
 			default:
 				return fmt.Errorf("unsupported action %q", action)
 			}
@@ -279,7 +286,7 @@ func cmdPatch(cfg *security.Config) *cobra.Command {
 		},
 	}
 	c.Flags().StringVarP(&anchorID, "anchor", "a", "", "anchor id")
-	c.Flags().StringVar(&action, "action", "replace_text", "replace_text|insert_after")
+	c.Flags().StringVar(&action, "action", "replace_text", "replace_text|insert_after|delete")
 	c.Flags().StringVar(&content, "content", "", "text content")
 	c.Flags().StringVarP(&output, "output", "o", "patched.docx", "output path")
 	c.Flags().StringVar(&copyFrom, "copy-format-from", "", "donor anchor for style clone")

@@ -9,6 +9,13 @@ type Options struct {
 	EnableVisual  bool
 	VisualTimeout time.Duration
 	WorkDir       string
+	// InputPath is the on-disk .docx used by Visual Gate. If empty and EnableVisual,
+	// Audit writes the package to a temporary file.
+	InputPath string
+	// KeepVisual keeps WorkDir artifacts; when false, temp dirs created for input
+	// staging may still retain visual outputs referenced in the report until the
+	// process exits (caller may delete WorkDir / PDFPath parent).
+	KeepVisual bool
 }
 
 // Issue is a single lint finding.

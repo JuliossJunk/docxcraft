@@ -10,15 +10,22 @@ import (
 )
 
 func TestDF004EmptyParagraph(t *testing.T) {
-	ast := []byte(`{"blocks":[{"type":"paragraph","text":"A"},{"type":"paragraph","text":"B"}]}`)
+	ast := []byte(`{"blocks":[{"type":"paragraph","text":"A"},{"type":"paragraph","text":"MID"},{"type":"paragraph","text":"B"}]}`)
 	res, err := compiler.Compile(ast, "corporate_executive")
 	require.NoError(t, err)
 
 	doc, err := res.Package.Document()
 	require.NoError(t, err)
-	paras := doc.FindElements("//p")
-	require.GreaterOrEqual(t, len(paras), 2)
-	for _, c := range paras[1].ChildElements() {
+	body := doc.FindElement("//body")
+	require.NotNil(t, body)
+	var bodyParas []*etree.Element
+	for _, c := range body.ChildElements() {
+		if c.Tag == "p" {
+			bodyParas = append(bodyParas, c)
+		}
+	}
+	require.GreaterOrEqual(t, len(bodyParas), 3)
+	for _, c := range bodyParas[1].ChildElements() {
 		if c.Tag != "r" {
 			continue
 		}
@@ -33,6 +40,11 @@ func TestDF004EmptyParagraph(t *testing.T) {
 	rep, err := Audit(res.Package, Options{ProfileName: "corporate_executive"})
 	require.NoError(t, err)
 	require.Contains(t, issueCodes(rep), "DF-004")
+	for _, iss := range rep.Issues {
+		if iss.Code == "DF-004" {
+			require.NotEmpty(t, iss.AnchorID)
+		}
+	}
 }
 
 func TestDF005HeadingSkip(t *testing.T) {

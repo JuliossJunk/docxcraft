@@ -117,6 +117,34 @@ func (s *Session) InsertAfterAnchor(anchorID string, texts ...string) ([]string,
 	return out, nil
 }
 
+// DeleteByAnchor removes a paragraph or table addressed by anchor_id from its parent.
+func (s *Session) DeleteByAnchor(anchorID string) error {
+	t, err := s.lookup(anchorID)
+	if err != nil {
+		return err
+	}
+	if t.Kind != "p" && t.Kind != "tbl" {
+		return fmt.Errorf("patcher: delete supports p/tbl anchors, got %s", t.Kind)
+	}
+	parent := t.Parent
+	if parent == nil {
+		return fmt.Errorf("patcher: anchor %q has no parent", anchorID)
+	}
+	removed := false
+	for i, tok := range parent.Child {
+		if tok == t.Element {
+			parent.RemoveChildAt(i)
+			removed = true
+			break
+		}
+	}
+	if !removed {
+		return fmt.Errorf("patcher: could not remove anchor %q from parent", anchorID)
+	}
+	s.Pkg.MarkDirty("word/document.xml")
+	return s.Pkg.RebuildIndex()
+}
+
 // CloneStyleFrom copies pPr and first-run rPr from src to dst, preserving dst paraId.
 func (s *Session) CloneStyleFrom(srcAnchor, dstAnchor string) error {
 	src, err := s.lookupP(srcAnchor)

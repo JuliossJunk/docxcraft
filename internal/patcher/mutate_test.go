@@ -51,3 +51,44 @@ func TestReplaceAndInsertStableAnchors(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, paragraphPlainText(got.Element), "Updated first")
 }
+
+func TestDeleteByAnchor(t *testing.T) {
+	ast := []byte(`{
+		"blocks": [
+			{"type": "paragraph", "text": "Keep"},
+			{"type": "paragraph", "text": "RemoveMe"},
+			{"type": "paragraph", "text": "AlsoKeep"}
+		]
+	}`)
+	res, err := compiler.Compile(ast, "corporate_executive")
+	require.NoError(t, err)
+
+	doc, err := res.Package.Document()
+	require.NoError(t, err)
+	var anchors []string
+	for _, p := range doc.FindElements("//p") {
+		if id := getParaID(p); id != "" {
+			anchors = append(anchors, id)
+		}
+	}
+	require.GreaterOrEqual(t, len(anchors), 3)
+	removeID, keepID := anchors[1], anchors[2]
+
+	sess := NewSession(res.Package)
+	require.NoError(t, sess.DeleteByAnchor(removeID))
+
+	_, ok := res.Package.Index().Get(removeID)
+	require.False(t, ok)
+	_, ok = res.Package.Index().Get(keepID)
+	require.True(t, ok)
+
+	doc2, err := res.Package.Document()
+	require.NoError(t, err)
+	text := ""
+	for _, tEl := range doc2.FindElements("//t") {
+		text += tEl.Text()
+	}
+	require.NotContains(t, text, "RemoveMe")
+	require.Contains(t, text, "Keep")
+	require.Contains(t, text, "AlsoKeep")
+}

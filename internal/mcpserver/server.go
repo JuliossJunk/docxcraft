@@ -168,7 +168,9 @@ func handlePatch(ctx context.Context, cfg *security.Config, req mcp.CallToolRequ
 			return mcp.NewToolResultError(err.Error()), nil
 		}
 	case "delete":
-		return mcp.NewToolResultError("patcher: delete not implemented yet"), nil
+		if err := sess.DeleteByAnchor(anchorID); err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
 	case "apply_tracked_change":
 		if err := sess.ApplyTrackedEdit(anchorID, content, req.GetString("author", "DocxCraft"), time.Time{}); err != nil {
 			return mcp.NewToolResultError(err.Error()), nil
@@ -213,6 +215,7 @@ func handleAudit(ctx context.Context, cfg *security.Config, req mcp.CallToolRequ
 		ProfileName:  req.GetString("profile_name", ""),
 		EnableVisual: req.GetBool("enable_visual", false),
 		Strict:       req.GetBool("strict", false),
+		InputPath:    path,
 	})
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
