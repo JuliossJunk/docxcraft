@@ -1,6 +1,6 @@
 # Specification 05: MCP Tools, CLI & Enterprise Security
 
-**Target Packages:** `internal/mcpserver`, `internal/security`, `cmd/docxforge`  
+**Target Packages:** `internal/mcpserver`, `internal/security`, `cmd/docxcraft`  
 **Status:** Draft / Core Architecture  
 **Dependencies:** `github.com/mark3labs/mcp-go`, `github.com/spf13/cobra`, `github.com/invopop/jsonschema`; ядро: `archive`, `oxml`, `anchor`, `profile`, `compiler`, `patcher`, `linter`
 
@@ -8,10 +8,10 @@
 
 ## 1. Назначение
 
-DocxForge предоставляет два равноправных транспорта поверх одного вычислительного ядра:
+DocxCraft предоставляет два равноправных транспорта поверх одного вычислительного ядра:
 
 1. **MCP Server (stdio)** — инструменты для ИИ-агентов (Cursor, Claude Code и др.) через JSON-RPC / MCP.
-2. **CLI (`docxforge`)** — те же операции для людей, скриптов и CI/CD.
+2. **CLI (`docxcraft`)** — те же операции для людей, скриптов и CI/CD.
 
 Оба транспорта обязаны проходить через `internal/security` (песочница путей, лимиты размера, readonly, whitelist инструментов) и работать с документами через **`DocumentSession`** (без глобального состояния).
 
@@ -20,7 +20,7 @@ DocxForge предоставляет два равноправных транс�
 ## 2. DocumentSession (in-memory)
 
 ```go
-package docxforge // или internal session type used by mcpserver/cli
+package docxcraft // или internal session type used by mcpserver/cli
 
 type DocumentSession struct {
 	ID        string
@@ -75,7 +75,7 @@ func (c *Config) AssertFileSize(path string) error
 
 ## 4. MCP Server (`internal/mcpserver`)
 
-Запуск: `docxforge mcp --transport stdio` (+ security flags).
+Запуск: `docxcraft mcp --transport stdio` (+ security flags).
 
 Транспорт v1: **только stdio**. Аргументы инструментов — структуры с тегами `jsonschema` (`invopop/jsonschema` / mcp-go).
 
@@ -176,7 +176,7 @@ func (c *Config) AssertFileSize(path string) error
 | `content` | no | Текст для replace/insert/tracked |
 | `output_path` | yes | Путь результата |
 | `copy_format_from` | no | Якорь-донор стиля (`CloneStyleFrom`) |
-| `author` | no | Для `apply_tracked_change` (default `DocxForge`) |
+| `author` | no | Для `apply_tracked_change` (default `DocxCraft`) |
 
 **Output:**
 
@@ -213,14 +213,14 @@ func (c *Config) AssertFileSize(path string) error
 
 ---
 
-## 5. CLI (`cmd/docxforge`)
+## 5. CLI (`cmd/docxcraft`)
 
 Библиотека: **Cobra**. Корневые persistent flags = security flags из §3.1.
 
 ### 5.1. Дерево команд
 
 ```bash
-docxforge [command] [flags]
+docxcraft [command] [flags]
 ```
 
 | Команда | Флаги | Описание |
@@ -236,15 +236,15 @@ Whitelist сопоставляет имена команд: `mcp`, `build`, `ins
 ### 5.2. Примеры
 
 ```bash
-docxforge build report_ast.json --profile gost_7_32_2017 -o final_report.docx
+docxcraft build report_ast.json --profile gost_7_32_2017 -o final_report.docx
 
-docxforge lint contract.docx --profile corporate_executive --strict
+docxcraft lint contract.docx --profile corporate_executive --strict
 
-docxforge inspect proposal.docx --json
+docxcraft inspect proposal.docx --json
 
-docxforge mcp --transport stdio --sandbox-dir ./workspace --readonly=false
+docxcraft mcp --transport stdio --sandbox-dir ./workspace --readonly=false
 
-docxforge patch draft.docx -a 1A4F09C1 --action replace_text --content "Обновлённый текст" -o out.docx
+docxcraft patch draft.docx -a 1A4F09C1 --action replace_text --content "Обновлённый текст" -o out.docx
 ```
 
 ### 5.3. Exit codes
@@ -260,13 +260,13 @@ docxforge patch draft.docx -a 1A4F09C1 --action replace_text --content "Обно
 ## 6. Связь пакетов
 
 ```text
-cmd/docxforge
+cmd/docxcraft
     → internal/security   (флаги, ResolvePath, AllowTool)
     → internal/mcpserver  (только команда mcp)
     → internal/compiler | patcher | linter | archive
 ```
 
-Публичный SDK: `pkg/docxforge` реэкспортирует высокоуровневые функции (`Open`, `Build`, `Lint`, `Patch`) без MCP-зависимости — для встраивания в другие Go-проекты.
+Публичный SDK: `pkg/docxcraft` реэкспортирует высокоуровневые функции (`Open`, `Build`, `Lint`, `Patch`) без MCP-зависимости — для встраивания в другие Go-проекты.
 
 ---
 

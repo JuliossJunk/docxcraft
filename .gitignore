@@ -1,6 +1,6 @@
 # Binaries
-/docxforge
-/docxforge.exe
+/docxcraft
+/docxcraft.exe
 *.exe
 *.dll
 *.so

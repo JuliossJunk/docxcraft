@@ -91,7 +91,7 @@ headings:
 {
   "title": "Техническое задание на разработку",
   "metadata": {
-    "author": "DocxForge Engine",
+    "author": "DocxCraft Engine",
     "version": "1.0"
   },
   "blocks": [

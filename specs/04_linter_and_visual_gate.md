@@ -8,14 +8,14 @@
 
 ## 1. Назначение двухконтурного линтера
 
-Линтер DocxForge обеспечивает **детерминированную самокоррекцию** для LLM и CI: после `compile_ast` / `patch_document` агент получает машинночитаемый отчёт с кодами правил и `anchor_id`, а не размытый текст «документ выглядит плохо».
+Линтер DocxCraft обеспечивает **детерминированную самокоррекцию** для LLM и CI: после `compile_ast` / `patch_document` агент получает машинночитаемый отчёт с кодами правил и `anchor_id`, а не размытый текст «документ выглядит плохо».
 
 Два контура:
 
 1. **Контур 1 — Rule-Based AST/DOM Linter (обязательный):** чистый Go, без внешних процессов. Проверяет геометрию страницы, поля, пустые абзацы, иерархию заголовков, таблицы (`w:tblHeader`, `w:cantSplit`, ширины колонок), соответствие шрифтов/интервалов выбранному YAML-профилю.
 2. **Контур 2 — Visual Gate (опциональный):** конвертация `.docx` → PDF/PNG через `LibreOffice --headless` для последующей VLM-проверки (съехавшие колонки, обрезанный текст). Если LibreOffice недоступен, контур пропускается с `severity_gate.status = "skipped"`.
 
-Потребители: CLI `docxforge lint`, MCP-инструмент `audit_document` (см. `specs/05_mcp_tools_and_security.md`).
+Потребители: CLI `docxcraft lint`, MCP-инструмент `audit_document` (см. `specs/05_mcp_tools_and_security.md`).
 
 ---
 
@@ -188,10 +188,10 @@ Visual Gate **сам по себе не добавляет DF-коды**. Он �
 
 | Интерфейс | Поведение |
 | :--- | :--- |
-| `docxforge lint FILE -p PROFILE [--strict] [--visual]` | Печатает JSON-отчёт в stdout; exit 0/1/2 по §2.2 |
+| `docxcraft lint FILE -p PROFILE [--strict] [--visual]` | Печатает JSON-отчёт в stdout; exit 0/1/2 по §2.2 |
 | MCP `audit_document` | Возвращает тот же JSON как structured content |
 
-Компилятор (`compile_ast` / `docxforge build`) **может** опционально вызывать `Audit` post-build и включать отчёт в ответ (см. spec 05).
+Компилятор (`compile_ast` / `docxcraft build`) **может** опционально вызывать `Audit` post-build и включать отчёт в ответ (см. spec 05).
 
 ---
 

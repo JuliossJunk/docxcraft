@@ -1,7 +1,7 @@
 .PHONY: build test lint
 
 build:
-	CGO_ENABLED=0 go build -o docxforge$(EXE) ./cmd/docxforge
+	CGO_ENABLED=0 go build -o docxcraft$(EXE) ./cmd/docxcraft
 
 test:
 	go test -race ./...

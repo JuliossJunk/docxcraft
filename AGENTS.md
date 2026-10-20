@@ -1,8 +1,8 @@
-# AGENTS.md — DocxForge Architecture & Engineering Guidelines
+# AGENTS.md — DocxCraft Architecture & Engineering Guidelines
 
 ## 1. Назначение проекта (Project Vision)
 
-**DocxForge** — это высокопроизводительный агентный харнесс (MCP-сервер + CLI + Go SDK) для детерминированной генерации, точечного редактирования и строгого линтинга документов Microsoft Word (`.docx`).
+**DocxCraft** — это высокопроизводительный агентный харнесс (MCP-сервер + CLI + Go SDK) для детерминированной генерации, точечного редактирования и строгого линтинга документов Microsoft Word (`.docx`).
 
 ### Главная архитектурная цель
 Превзойти существующие решения (Anthropic `docx skill`, `docx-rs`, Python-обвязки) за счет **Zero-Loss DOM Manipulation** (редактирование XML-дерева в памяти без потери оригинальной верстки) и отделения декларативного контента от строгих профилей стандартов (ГОСТ, Corporate, Legal).
@@ -36,7 +36,7 @@
 * **Язык:** Go 1.23+
 * **Работа с XML DOM и XPath:** `github.com/beevik/etree` (быстрый in-memory DOM с поддержкой пространств имен и XPath-запросов).
 * **MCP Протокол:** `github.com/mark3labs/mcp-go` (генерация инструментов, ресурсов и JSON Schema для LLM).
-* **CLI Фреймворк:** `github.com/spf13/cobra` (единый бинарник для запуска как `docxforge mcp` и как CLI-утилиты `docxforge lint/build/inspect`).
+* **CLI Фреймворк:** `github.com/spf13/cobra` (единый бинарник для запуска как `docxcraft mcp` и как CLI-утилиты `docxcraft lint/build/inspect`).
 * **Конфигурация и Профили стилей:** `gopkg.in/yaml.v3` (загрузка профилей ГОСТ / Corporate).
 * **Валидация и Схемы:** `github.com/invopop/jsonschema` + стандартный `encoding/json`.
 * **Тестирование:** стандартный `testing` + `github.com/stretchr/testify` + Golden-тесты XML-фрагментов.
@@ -48,13 +48,13 @@
 Проект следует стандарту **Standard Go Project Layout** с жестким разделением вычислительного ядра (`internal/`) и транспортных адаптеров (`cmd/`, `pkg/`):
 
 ```text
-docxforge/
+docxcraft/
 ├── AGENTS.md                    # Настоящий манифест и правила для ИИ-агентов и разработчиков
 ├── go.mod
 ├── go.sum
 ├── Makefile                     # Сборка, линтеры кода, прогон тестов и генерация схем
 ├── cmd/
-│   └── docxforge/
+│   └── docxcraft/
 │       └── main.go              # Точка входа CLI (команды: mcp, build, patch, lint, inspect)
 ├── profiles/                    # Встроенные YAML-профили стандартов оформления (embed.FS)
 │   ├── gost_7_32_2017.yaml
@@ -77,7 +77,7 @@ docxforge/
 │   ├── security/                # Песочница путей, лимиты памяти и whitelist инструментов
 │   └── mcpserver/               # Регистрация инструментов и хендлеров для mark3labs/mcp-go
 ├── pkg/
-│   └── docxforge/               # Публичный Go SDK для прямого импорта в другие Go-проекты
+│   └── docxcraft/               # Публичный Go SDK для прямого импорта в другие Go-проекты
 └── testdata/
     ├── fixtures/                # Эталонные .docx файлы (сложные таблицы, шаблоны с разорванными тегами)
     └── golden/                  # Ожидаемые XML-слепки для регрессионного тестирования
@@ -124,13 +124,13 @@ docxforge/
 | **`specs/02_style_profiles_and_ast.md`** | `internal/profile`, `internal/compiler`, `profiles/*.yaml` | Полная схема YAML-профиля стилей (ГОСТ / Corporate) и JSON Schema входного AST документа (блоки: заголовки, абзацы, умные таблицы, списки, выноски, разрывы страниц). Правила расчета ширин колонок таблиц. |
 | **`specs/03_ecma376_normalizer.md`** | `internal/oxml/normalizer.go`, `internal/patcher` | Таблицы приоритетов сортировки дочерних XML-тегов по стандарту ECMA-376 для `<w:pPr>`, `<w:rPr>`, `<w:tblPr>`, `<w:trPr>`, `<w:tcPr>`. Спецификация клонирования форматов (`copy_format_from`) и разметки рецензирования (`<w:ins>`, `<w:del>`). |
 | **`specs/04_linter_and_visual_gate.md`** | `internal/linter` | Каталог детерминированных правил аудита документа (коды ошибок `DF-001` .. `DF-020`), структура JSON-отчета линтера для самокоррекции LLM, протокол вызова `LibreOffice --headless` для визуального рендера. |
-| **`specs/05_mcp_tools_and_security.md`** | `internal/mcpserver`, `internal/security`, `cmd/docxforge` | Сигнатуры всех MCP-инструментов (входные/выходные JSON-контракты), дизайн CLI-команд, работа in-memory сессий документов и правила песочницы (`--sandbox-dir`, `--readonly`, `--whitelist`). |
+| **`specs/05_mcp_tools_and_security.md`** | `internal/mcpserver`, `internal/security`, `cmd/docxcraft` | Сигнатуры всех MCP-инструментов (входные/выходные JSON-контракты), дизайн CLI-команд, работа in-memory сессий документов и правила песочницы (`--sandbox-dir`, `--readonly`, `--whitelist`). |
 
 ---
 
 ## 7. Алгоритм работы для ИИ-агентов (Workflow for Coding Agents)
 
-Если вы — ИИ-агент, работающий над кодовой базой `DocxForge`:
+Если вы — ИИ-агент, работающий над кодовой базой DocxCraft:
 1. **Перед написанием кода** прочитайте соответствующий документ в папке `specs/`. Не выдумывайте собственные названия XML-тегов или структуры JSON AST — строго следуйте контрактам из спецификаций.
 2. **При добавлении новой мутации XML** убедитесь, что она:
    * Работает через `anchor_id` (`w14:paraId`), а не через индекс массива.

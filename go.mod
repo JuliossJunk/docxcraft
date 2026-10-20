@@ -1,3 +1,3 @@
-module docxforge
+module docxcraft
 
 go 1.23
