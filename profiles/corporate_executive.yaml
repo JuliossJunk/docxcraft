@@ -1,0 +1,43 @@
+name: "corporate_executive"
+description: "Modern executive style with deep navy accents and clean typography"
+
+page:
+  size: "A4"
+  margins:
+    top_cm: 2.54
+    bottom_cm: 2.54
+    left_cm: 2.54
+    right_cm: 2.54
+
+palette:
+  primary: "#1E3A8A"
+  secondary: "#475569"
+  body_text: "#1F2937"
+  muted_bg: "#F1F5F9"
+
+typography:
+  body_font: "Calibri"
+  heading_font: "Calibri"
+  body_size_pt: 11.0
+  line_spacing: 1.15
+  paragraph_space_after_pt: 6.0
+
+headings:
+  h1:
+    size_pt: 16.0
+    bold: true
+    space_before_pt: 12.0
+    space_after_pt: 4.0
+    keep_with_next: true
+  h2:
+    size_pt: 13.0
+    bold: true
+    space_before_pt: 8.0
+    space_after_pt: 3.0
+    keep_with_next: true
+  h3:
+    size_pt: 12.0
+    bold: true
+    space_before_pt: 6.0
+    space_after_pt: 2.0
+    keep_with_next: true

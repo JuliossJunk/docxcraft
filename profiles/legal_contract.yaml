@@ -1,0 +1,43 @@
+name: "legal_contract"
+description: "Legal contract style with serif body and reserved margins"
+
+page:
+  size: "A4"
+  margins:
+    top_cm: 2.5
+    bottom_cm: 2.5
+    left_cm: 3.0
+    right_cm: 2.0
+
+palette:
+  primary: "#1A1A1A"
+  secondary: "#333333"
+  body_text: "#1A1A1A"
+  muted_bg: "#EEEEEE"
+
+typography:
+  body_font: "Times New Roman"
+  heading_font: "Times New Roman"
+  body_size_pt: 12.0
+  line_spacing: 1.15
+  paragraph_space_after_pt: 8.0
+
+headings:
+  h1:
+    size_pt: 14.0
+    bold: true
+    space_before_pt: 14.0
+    space_after_pt: 8.0
+    keep_with_next: true
+  h2:
+    size_pt: 12.0
+    bold: true
+    space_before_pt: 10.0
+    space_after_pt: 6.0
+    keep_with_next: true
+  h3:
+    size_pt: 12.0
+    bold: true
+    space_before_pt: 8.0
+    space_after_pt: 4.0
+    keep_with_next: true
