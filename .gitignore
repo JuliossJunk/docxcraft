@@ -1,0 +1,34 @@
+# Binaries
+/docxforge
+/docxforge.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test / coverage
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Go workspace (local)
+go.work
+go.work.sum
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.*
+*.pem
+
+# Build artifacts
+/dist/
+/bin/
