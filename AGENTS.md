@@ -137,3 +137,19 @@ docxcraft/
    * Вызывает нормализатор порядка элементов `oxml.NormalizeElementOrder()`.
    * Сопровождается unit-тестом в соответствующем пакете.
 3. **Зависимости:** Не добавляйте тяжелые внешние библиотеки или C-зависимости (`cgo`). Проект должен оставаться чистым Go-приложением (`CGO_ENABLED=0`), компилируемым под Linux, macOS и Windows за секунды.
+
+---
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `JuliossJunk/docxcraft` (via `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical roles map 1:1 to tracker labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`. See `docs/agents/domain.md`.
