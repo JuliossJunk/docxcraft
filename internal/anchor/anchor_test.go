@@ -3,7 +3,7 @@ package anchor
 import (
 	"testing"
 
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/stretchr/testify/require"
 )

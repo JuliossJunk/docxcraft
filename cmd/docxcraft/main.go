@@ -6,16 +6,19 @@ import (
 	"fmt"
 	"os"
 
-	"docxcraft/internal/anchor"
-	"docxcraft/internal/archive"
-	"docxcraft/internal/compiler"
-	"docxcraft/internal/linter"
-	"docxcraft/internal/mcpserver"
-	"docxcraft/internal/patcher"
-	"docxcraft/internal/security"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/compiler"
+	"github.com/JuliossJunk/docxcraft/internal/linter"
+	"github.com/JuliossJunk/docxcraft/internal/mcpserver"
+	"github.com/JuliossJunk/docxcraft/internal/patcher"
+	"github.com/JuliossJunk/docxcraft/internal/security"
 
 	"github.com/spf13/cobra"
 )
+
+// version is set at link time via -ldflags "-X main.version=…".
+var version = "dev"
 
 func main() {
 	cfg := security.NewConfig()
@@ -29,6 +32,7 @@ func main() {
 	root := &cobra.Command{
 		Use:           "docxcraft",
 		Short:         "DocxCraft — deterministic .docx generation, patching, and linting",
+		Version:       version,
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

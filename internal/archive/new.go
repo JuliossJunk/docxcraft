@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
 
 	"github.com/beevik/etree"
 )

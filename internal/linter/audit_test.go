@@ -3,7 +3,7 @@ package linter
 import (
 	"testing"
 
-	"docxcraft/internal/compiler"
+	"github.com/JuliossJunk/docxcraft/internal/compiler"
 
 	"github.com/beevik/etree"
 	"github.com/stretchr/testify/require"

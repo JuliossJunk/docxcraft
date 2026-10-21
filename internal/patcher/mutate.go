@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"docxcraft/internal/archive"
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 )

@@ -8,8 +8,8 @@ import (
 	"os"
 	"sync"
 
-	"docxcraft/internal/anchor"
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 )

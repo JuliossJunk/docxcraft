@@ -7,12 +7,12 @@ import (
 	"os"
 	"time"
 
-	"docxcraft/internal/anchor"
-	"docxcraft/internal/archive"
-	"docxcraft/internal/compiler"
-	"docxcraft/internal/linter"
-	"docxcraft/internal/patcher"
-	"docxcraft/internal/security"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/compiler"
+	"github.com/JuliossJunk/docxcraft/internal/linter"
+	"github.com/JuliossJunk/docxcraft/internal/patcher"
+	"github.com/JuliossJunk/docxcraft/internal/security"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"

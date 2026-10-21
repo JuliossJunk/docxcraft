@@ -2,11 +2,11 @@
 package docxcraft
 
 import (
-	"docxcraft/internal/anchor"
-	"docxcraft/internal/archive"
-	"docxcraft/internal/compiler"
-	"docxcraft/internal/linter"
-	"docxcraft/internal/patcher"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/compiler"
+	"github.com/JuliossJunk/docxcraft/internal/linter"
+	"github.com/JuliossJunk/docxcraft/internal/patcher"
 )
 
 // Open opens a .docx package from path.

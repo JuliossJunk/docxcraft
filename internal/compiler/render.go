@@ -3,7 +3,7 @@ package compiler
 import (
 	"strconv"
 
-	"docxcraft/internal/profile"
+	"github.com/JuliossJunk/docxcraft/internal/profile"
 
 	"github.com/beevik/etree"
 )

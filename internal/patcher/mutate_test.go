@@ -3,8 +3,8 @@ package patcher
 import (
 	"testing"
 
-	"docxcraft/internal/compiler"
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/compiler"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/stretchr/testify/require"
 )

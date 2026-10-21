@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
 
 	"github.com/stretchr/testify/require"
 )

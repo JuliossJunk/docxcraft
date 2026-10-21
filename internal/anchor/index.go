@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 )

@@ -1,7 +1,7 @@
 package profile
 
 import (
-	"docxcraft/profiles"
+	"github.com/JuliossJunk/docxcraft/profiles"
 )
 
 func init() {

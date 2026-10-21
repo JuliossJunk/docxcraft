@@ -1,4 +1,4 @@
-module docxcraft
+module github.com/JuliossJunk/docxcraft
 
 go 1.25.5
 

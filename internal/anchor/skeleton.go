@@ -1,7 +1,7 @@
 package anchor
 
 import (
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 )

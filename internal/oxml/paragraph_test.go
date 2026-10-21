@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"docxcraft/internal/anchor"
-	"docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/anchor"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 	"github.com/stretchr/testify/require"

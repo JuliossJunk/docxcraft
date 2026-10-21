@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"docxcraft/internal/archive"
-	"docxcraft/internal/oxml"
-	"docxcraft/internal/profile"
+	"github.com/JuliossJunk/docxcraft/internal/archive"
+	"github.com/JuliossJunk/docxcraft/internal/oxml"
+	"github.com/JuliossJunk/docxcraft/internal/profile"
 
 	"github.com/beevik/etree"
 )
