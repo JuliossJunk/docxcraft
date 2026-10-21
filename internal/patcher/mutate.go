@@ -108,7 +108,7 @@ func (s *Session) InsertAfterAnchor(anchorID string, texts ...string) ([]string,
 
 	out := make([]string, 0, len(inserted))
 	for _, p := range inserted {
-		id := getParaID(p)
+		id := oxml.ParaID(p)
 		if id == "" {
 			return nil, fmt.Errorf("patcher: inserted paragraph missing paraId after reindex")
 		}
@@ -156,8 +156,8 @@ func (s *Session) CloneStyleFrom(srcAnchor, dstAnchor string) error {
 		return err
 	}
 
-	paraID := getParaID(dst.Element)
-	textID := getTextID(dst.Element)
+	paraID := oxml.ParaID(dst.Element)
+	textID := oxml.GetW14Attr(dst.Element, "textId")
 
 	// remove dst pPr
 	for i := len(dst.Element.Child) - 1; i >= 0; i-- {
@@ -203,10 +203,10 @@ func (s *Session) CloneStyleFrom(srcAnchor, dstAnchor string) error {
 	}
 
 	if paraID != "" {
-		setAttr(dst.Element, "w14:paraId", paraID)
+		oxml.SetParaID(dst.Element, paraID)
 	}
 	if textID != "" {
-		setAttr(dst.Element, "w14:textId", textID)
+		oxml.SetW14Attr(dst.Element, "textId", textID)
 	}
 
 	s.Pkg.MarkDirty("word/document.xml")
@@ -228,7 +228,7 @@ func (s *Session) ApplyTrackedEdit(anchorID, newText, author string, ts time.Tim
 	date := ts.Format("2006-01-02T15:04:05Z")
 	p := t.Element
 
-	oldText := paragraphPlainText(p)
+	oldText := oxml.ParagraphPlainText(p)
 	// clear runs
 	for i := len(p.Child) - 1; i >= 0; i-- {
 		el, ok := p.Child[i].(*etree.Element)
@@ -299,49 +299,3 @@ func newParagraph(text string) *etree.Element {
 	return p
 }
 
-func getParaID(el *etree.Element) string {
-	for _, a := range el.Attr {
-		if a.Space == "w14" && a.Key == "paraId" {
-			return a.Value
-		}
-		if a.Key == "w14:paraId" || a.Key == "paraId" {
-			return a.Value
-		}
-	}
-	return ""
-}
-
-func getTextID(el *etree.Element) string {
-	for _, a := range el.Attr {
-		if a.Key == "textId" || a.Key == "w14:textId" {
-			return a.Value
-		}
-	}
-	return ""
-}
-
-func setAttr(el *etree.Element, key, val string) {
-	for i := range el.Attr {
-		if el.Attr[i].Key == key || (el.Attr[i].Space == "w14" && key == "w14:"+el.Attr[i].Key) {
-			el.Attr[i].Value = val
-			return
-		}
-	}
-	el.CreateAttr(key, val)
-}
-
-func paragraphPlainText(p *etree.Element) string {
-	var b []byte
-	var walk func(*etree.Element)
-	walk = func(el *etree.Element) {
-		if el.Tag == "t" || el.Tag == "delText" {
-			b = append(b, el.Text()...)
-			return
-		}
-		for _, c := range el.ChildElements() {
-			walk(c)
-		}
-	}
-	walk(p)
-	return string(b)
-}

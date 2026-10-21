@@ -109,11 +109,11 @@ func hasW14Namespace(root *etree.Element) bool {
 
 func ensureParagraphAnchor(el, parent *etree.Element, location string, idx *Index, existing map[string]struct{}) bool {
 	mutated := false
-	id := getW14Attr(el, "paraId")
+	id := oxml.ParaID(el)
 	if !isValidParaID(id) || idTaken(idx, id) {
 		id = generateValidParaID(existing)
-		setW14Attr(el, "paraId", id)
-		setW14Attr(el, "textId", id)
+		oxml.SetParaID(el, id)
+		oxml.SetW14Attr(el, "textId", id)
 		mutated = true
 	}
 	existing[id] = struct{}{}
@@ -133,10 +133,10 @@ func ensureTableAnchor(el, parent *etree.Element, location string, idx *Index, e
 	if firstTR == nil {
 		return false
 	}
-	rowID := getW14Attr(firstTR, "paraId")
+	rowID := oxml.ParaID(firstTR)
 	if !isValidParaID(rowID) || idTaken(idx, rowID) || idTaken(idx, tblPrefix+rowID) {
 		rowID = generateValidParaID(existing)
-		setW14Attr(firstTR, "paraId", rowID)
+		oxml.SetParaID(firstTR, rowID)
 		mutated = true
 	}
 	existing[rowID] = struct{}{}
@@ -171,42 +171,6 @@ func firstChildByTag(parent *etree.Element, tag string) *etree.Element {
 		}
 	}
 	return nil
-}
-
-func getW14Attr(el *etree.Element, key string) string {
-	for _, attr := range el.Attr {
-		if attr.Key == key && (attr.Space == "w14" || attr.Space == "") {
-			if attr.Space == "w14" || strings.HasPrefix(attr.Key, "w14:") {
-				return strings.ToUpper(attr.Value)
-			}
-		}
-		if attr.Key == "w14:"+key {
-			return strings.ToUpper(attr.Value)
-		}
-		if attr.Space == "w14" && attr.Key == key {
-			return strings.ToUpper(attr.Value)
-		}
-	}
-	// etree may store as Space=w14 Key=paraId
-	if v := el.SelectAttrValue("w14:"+key, ""); v != "" {
-		return strings.ToUpper(v)
-	}
-	return ""
-}
-
-func setW14Attr(el *etree.Element, key, value string) {
-	full := "w14:" + key
-	for i := range el.Attr {
-		if el.Attr[i].Space == "w14" && el.Attr[i].Key == key {
-			el.Attr[i].Value = value
-			return
-		}
-		if el.Attr[i].Key == full {
-			el.Attr[i].Value = value
-			return
-		}
-	}
-	el.CreateAttr(full, value)
 }
 
 func isValidParaID(id string) bool {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"docxcraft/internal/archive"
+	"docxcraft/internal/oxml"
 	"docxcraft/internal/profile"
 
 	"github.com/beevik/etree"
@@ -61,7 +62,7 @@ func Audit(pkg *archive.Package, opts Options) (*Report, error) {
 		return rep, nil
 	}
 
-	body := findBody(doc)
+	body := oxml.Body(doc)
 	if body == nil {
 		rep.add(Issue{
 			Code: "DF-020", Severity: "fatal", Location: locationDoc,
@@ -131,18 +132,6 @@ func fatalReport(profileName, code, msg string) *Report {
 	return r
 }
 
-func findBody(doc *etree.Document) *etree.Element {
-	if doc == nil || doc.Root() == nil {
-		return nil
-	}
-	for _, c := range doc.Root().ChildElements() {
-		if c.Tag == "body" {
-			return c
-		}
-	}
-	return nil
-}
-
 func runStructural(body *etree.Element, rep *Report) {
 	sect := findSectPr(body)
 	if sect == nil {
@@ -157,7 +146,7 @@ func runStructural(body *etree.Element, rep *Report) {
 	collectParasAndTables(body, &paras, nil)
 
 	for _, p := range paras {
-		id := paraID(p)
+		id := oxml.ParaID(p)
 		if id == "" {
 			rep.add(Issue{
 				Code: "DF-015", Severity: "warning", Location: locationDoc,
@@ -255,7 +244,7 @@ func checkHeadingHierarchy(paras []*etree.Element, rep *Report) {
 		}
 		if lastLevel > 0 && level > lastLevel+1 {
 			rep.add(Issue{
-				Code: "DF-005", Severity: "error", AnchorID: paraID(p), Location: locationDoc,
+				Code: "DF-005", Severity: "error", AnchorID: oxml.ParaID(p), Location: locationDoc,
 				Message: fmt.Sprintf("Heading level jumps from H%d to H%d", lastLevel, level),
 				SuggestedFix: "Insert intermediate heading level or lower this heading",
 			})
@@ -274,7 +263,7 @@ func checkHeadingHierarchy(paras []*etree.Element, rep *Report) {
 		}
 		if nextLevel == 0 || (nextLevel > 0 && nextLevel <= level) {
 			rep.add(Issue{
-				Code: "DF-006", Severity: "warning", AnchorID: paraID(p), Location: locationDoc,
+				Code: "DF-006", Severity: "warning", AnchorID: oxml.ParaID(p), Location: locationDoc,
 				Message: "Heading without following body content",
 				SuggestedFix: "Add a paragraph after the heading or merge headings",
 			})
@@ -319,7 +308,7 @@ func checkEmptyParagraphGaps(body *etree.Element, rep *Report) {
 		}
 		if hasBefore && hasAfter {
 			rep.add(Issue{
-				Code: "DF-004", Severity: "error", AnchorID: paraID(b.el), Location: locationDoc,
+				Code: "DF-004", Severity: "error", AnchorID: oxml.ParaID(b.el), Location: locationDoc,
 				Message: "Empty paragraph used for vertical spacing between content",
 				SuggestedFix: "Remove empty paragraph; use w:spacing instead",
 			})
@@ -472,7 +461,7 @@ func checkTypography(body *etree.Element, res *profile.Resolved, rep *Report) {
 	collectParasAndTables(body, &paras, nil)
 	for _, p := range paras {
 		level := headingLevel(p)
-		id := paraID(p)
+		id := oxml.ParaID(p)
 		if level > 0 {
 			h, ok := res.Profile.Heading(level)
 			if !ok {
@@ -562,19 +551,10 @@ func collectParasAndTables(el *etree.Element, paras *[]*etree.Element, tables *[
 	}
 }
 
-func paraID(p *etree.Element) string {
-	for _, a := range p.Attr {
-		if (a.Space == "w14" && a.Key == "paraId") || a.Key == "w14:paraId" || a.Key == "paraId" {
-			return strings.ToUpper(a.Value)
-		}
-	}
-	return ""
-}
-
 func tableAnchor(tbl *etree.Element) string {
 	for _, c := range tbl.ChildElements() {
 		if c.Tag == "tr" {
-			id := paraID(c)
+			id := oxml.ParaID(c)
 			if id != "" {
 				return "tbl_" + id
 			}
@@ -585,7 +565,7 @@ func tableAnchor(tbl *etree.Element) string {
 }
 
 func headingLevel(p *etree.Element) int {
-	style := paragraphStyle(p)
+	style := oxml.ParagraphStyle(p)
 	switch style {
 	case "Heading1", "heading 1":
 		return 1
@@ -597,37 +577,23 @@ func headingLevel(p *etree.Element) int {
 	return 0
 }
 
-func paragraphStyle(p *etree.Element) string {
-	for _, c := range p.ChildElements() {
-		if c.Tag != "pPr" {
-			continue
-		}
-		for _, pp := range c.ChildElements() {
-			if pp.Tag == "pStyle" {
-				return attrVal(pp, "val")
-			}
-		}
-	}
-	return ""
-}
-
 func isEmptyParagraph(p *etree.Element) bool {
-	hasDrawing := false
-	text := ""
+	if strings.TrimSpace(oxml.ParagraphPlainText(p)) != "" {
+		return false
+	}
+	var hasDrawing bool
 	var walk func(*etree.Element)
 	walk = func(el *etree.Element) {
-		switch el.Tag {
-		case "t", "delText":
-			text += el.Text()
-		case "drawing", "pict":
+		if el.Tag == "drawing" || el.Tag == "pict" {
 			hasDrawing = true
+			return
 		}
 		for _, c := range el.ChildElements() {
 			walk(c)
 		}
 	}
 	walk(p)
-	return !hasDrawing && strings.TrimSpace(text) == ""
+	return !hasDrawing
 }
 
 func hasBrokenTemplate(p *etree.Element) bool {

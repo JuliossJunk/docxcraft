@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"docxcraft/internal/archive"
+	"docxcraft/internal/oxml"
 	"docxcraft/internal/profile"
 
 	"github.com/beevik/etree"
@@ -47,7 +48,7 @@ func CompileWithProfile(astJSON []byte, style *profile.StyleProfile) (*Result, e
 		return nil, fmt.Errorf("compiler document: %w", err)
 	}
 
-	body := findBody(xmlDoc)
+	body := oxml.Body(xmlDoc)
 	if body == nil {
 		return nil, fmt.Errorf("compiler: missing w:body")
 	}
@@ -87,14 +88,3 @@ func renderBlock(body *etree.Element, b Block, res *profile.Resolved) error {
 	return nil
 }
 
-func findBody(doc *etree.Document) *etree.Element {
-	if doc == nil || doc.Root() == nil {
-		return nil
-	}
-	for _, c := range doc.Root().ChildElements() {
-		if c.Tag == "body" {
-			return c
-		}
-	}
-	return nil
-}

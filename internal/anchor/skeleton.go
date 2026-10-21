@@ -1,7 +1,7 @@
 package anchor
 
 import (
-	"strings"
+	"docxcraft/internal/oxml"
 
 	"github.com/beevik/etree"
 )
@@ -27,16 +27,20 @@ func InspectSkeleton(doc *etree.Document, idx *Index) []Block {
 	walk = func(el *etree.Element) {
 		switch el.Tag {
 		case "p":
-			id := getW14Attr(el, "paraId")
+			id := oxml.ParaID(el)
 			if id == "" && idx != nil {
 				// fall back to index reverse lookup by element pointer
 				id = findIDByElement(idx, el)
 			}
+			style := oxml.ParagraphStyle(el)
+			if style == "" {
+				style = "Normal"
+			}
 			blocks = append(blocks, Block{
 				Anchor: id,
 				Type:   "p",
-				Style:  paragraphStyle(el),
-				Text:   paragraphText(el),
+				Style:  style,
+				Text:   oxml.ParagraphPlainText(el),
 			})
 			return // do not descend into nested content of p
 		case "tbl":
@@ -46,7 +50,7 @@ func InspectSkeleton(doc *etree.Document, idx *Index) []Block {
 			}
 			if id == "" {
 				if tr := firstChildByTag(el, "tr"); tr != nil {
-					rowID := getW14Attr(tr, "paraId")
+					rowID := oxml.ParaID(tr)
 					if rowID != "" {
 						id = tblPrefix + rowID
 					}
@@ -77,46 +81,6 @@ func findIDByElement(idx *Index, el *etree.Element) string {
 		}
 	}
 	return ""
-}
-
-func paragraphStyle(p *etree.Element) string {
-	for _, child := range p.ChildElements() {
-		if child.Tag != "pPr" {
-			continue
-		}
-		for _, pp := range child.ChildElements() {
-			if pp.Tag == "pStyle" {
-				for _, attr := range pp.Attr {
-					if attr.Key == "val" || attr.Key == "w:val" || (attr.Space == "w" && attr.Key == "val") {
-						return attr.Value
-					}
-				}
-				if v := pp.SelectAttrValue("w:val", ""); v != "" {
-					return v
-				}
-				if v := pp.SelectAttrValue("val", ""); v != "" {
-					return v
-				}
-			}
-		}
-	}
-	return "Normal"
-}
-
-func paragraphText(p *etree.Element) string {
-	var b strings.Builder
-	var walk func(*etree.Element)
-	walk = func(el *etree.Element) {
-		if el.Tag == "t" {
-			b.WriteString(el.Text())
-			return
-		}
-		for _, c := range el.ChildElements() {
-			walk(c)
-		}
-	}
-	walk(p)
-	return b.String()
 }
 
 func tableMeta(tbl *etree.Element) (rows, cols int, headers []string) {
@@ -159,17 +123,5 @@ func tableMeta(tbl *etree.Element) (rows, cols int, headers []string) {
 }
 
 func cellText(tc *etree.Element) string {
-	var b strings.Builder
-	var walk func(*etree.Element)
-	walk = func(el *etree.Element) {
-		if el.Tag == "t" {
-			b.WriteString(el.Text())
-			return
-		}
-		for _, c := range el.ChildElements() {
-			walk(c)
-		}
-	}
-	walk(tc)
-	return b.String()
+	return oxml.ParagraphPlainText(tc)
 }

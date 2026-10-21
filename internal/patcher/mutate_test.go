@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"docxcraft/internal/compiler"
+	"docxcraft/internal/oxml"
 
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +28,7 @@ func TestReplaceAndInsertStableAnchors(t *testing.T) {
 	require.NoError(t, err)
 	var anchors []string
 	for _, p := range doc.FindElements("//p") {
-		id := getParaID(p)
+		id := oxml.ParaID(p)
 		if id != "" {
 			anchors = append(anchors, id)
 		}
@@ -49,7 +50,7 @@ func TestReplaceAndInsertStableAnchors(t *testing.T) {
 
 	got, ok := res.Package.Index().Get(first)
 	require.True(t, ok)
-	require.Contains(t, paragraphPlainText(got.Element), "Updated first")
+	require.Contains(t, oxml.ParagraphPlainText(got.Element), "Updated first")
 }
 
 func TestDeleteByAnchor(t *testing.T) {
@@ -67,7 +68,7 @@ func TestDeleteByAnchor(t *testing.T) {
 	require.NoError(t, err)
 	var anchors []string
 	for _, p := range doc.FindElements("//p") {
-		if id := getParaID(p); id != "" {
+		if id := oxml.ParaID(p); id != "" {
 			anchors = append(anchors, id)
 		}
 	}
