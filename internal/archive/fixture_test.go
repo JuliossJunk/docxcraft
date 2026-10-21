@@ -73,31 +73,6 @@ func buildMinimalDocx() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func buildDocxWithDocument(documentXML string) ([]byte, error) {
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	parts := map[string]string{
-		"[Content_Types].xml":          contentTypesXML,
-		"_rels/.rels":                  relsXML,
-		"word/document.xml":            documentXML,
-		"word/_rels/document.xml.rels": docRelsXML,
-	}
-	order := []string{"[Content_Types].xml", "_rels/.rels", "word/document.xml", "word/_rels/document.xml.rels"}
-	for _, name := range order {
-		w, err := zw.Create(name)
-		if err != nil {
-			return nil, err
-		}
-		if _, err := w.Write([]byte(parts[name])); err != nil {
-			return nil, err
-		}
-	}
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
 func mustMinimalDocx() []byte {
 	b, err := buildMinimalDocx()
 	if err != nil {

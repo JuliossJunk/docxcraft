@@ -34,11 +34,8 @@ func (s *Session) ReplaceParagraphText(anchorID, newText string, keepFormat bool
 			if c.Tag != "r" {
 				continue
 			}
-			for _, rc := range c.ChildElements() {
-				if rc.Tag == "rPr" {
-					keptRPr = rc.Copy()
-				}
-				break
+			if kids := c.ChildElements(); len(kids) > 0 && kids[0].Tag == "rPr" {
+				keptRPr = kids[0].Copy()
 			}
 			break
 		}
@@ -178,11 +175,8 @@ func (s *Session) CloneStyleFrom(srcAnchor, dstAnchor string) error {
 		if c.Tag != "r" {
 			continue
 		}
-		for _, rc := range c.ChildElements() {
-			if rc.Tag == "rPr" {
-				srcRPr = rc.Copy()
-			}
-			break
+		if kids := c.ChildElements(); len(kids) > 0 && kids[0].Tag == "rPr" {
+			srcRPr = kids[0].Copy()
 		}
 		break
 	}

@@ -50,7 +50,7 @@ func OpenFile(path string) (*Package, error) {
 	if err != nil {
 		return nil, fmt.Errorf("archive open file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	st, err := f.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("archive stat: %w", err)
