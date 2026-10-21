@@ -88,3 +88,12 @@ func TestCompileUnknownProfile(t *testing.T) {
 	_, err := Compile([]byte(`{"blocks":[{"type":"paragraph","text":"x"}]}`), "nope")
 	require.Error(t, err)
 }
+
+func TestParseAST_stripsUTF8BOM(t *testing.T) {
+	payload := []byte(`{"blocks":[{"type":"paragraph","text":"ok"}]}`)
+	withBOM := append([]byte{0xEF, 0xBB, 0xBF}, payload...)
+	doc, err := ParseAST(withBOM)
+	require.NoError(t, err)
+	require.Len(t, doc.Blocks, 1)
+	require.Equal(t, "ok", doc.Blocks[0].Text)
+}

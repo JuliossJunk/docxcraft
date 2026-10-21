@@ -48,7 +48,9 @@ type Run struct {
 }
 
 // ParseAST unmarshals and validates a JSON AST document.
+// A leading UTF-8 BOM (common from Windows editors / PowerShell Set-Content) is ignored.
 func ParseAST(data []byte) (*Document, error) {
+	data = stripUTF8BOM(data)
 	var doc Document
 	if err := json.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("compiler ast: %w", err)
@@ -57,6 +59,13 @@ func ParseAST(data []byte) (*Document, error) {
 		return nil, err
 	}
 	return &doc, nil
+}
+
+func stripUTF8BOM(data []byte) []byte {
+	if len(data) >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
+		return data[3:]
+	}
+	return data
 }
 
 func validateDocument(doc *Document) error {
