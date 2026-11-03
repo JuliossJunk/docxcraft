@@ -74,6 +74,12 @@ docxcraft mcp --transport stdio --sandbox-dir ./workspace
 
 Global security flags: `--sandbox-dir`, `--max-size`, `--readonly`, `--whitelist`.
 
+Whole-paragraph replacement preserves bookmarks, comment markers and references,
+drawings, and paragraph properties. Paragraphs containing hyperlinks, fields,
+content controls, or existing tracked changes are currently rejected before any
+edit, rather than flattening their structure. This also applies to tracked edits;
+see [the patch safety contract](specs/03_ecma376_normalizer.md#6-безопасная-замена-текста-и-рецензирование).
+
 CLI exit codes: `0` success, `1` linter/validation errors, `2` fatal (IO, ZIP, sandbox).
 
 ## Style profiles
