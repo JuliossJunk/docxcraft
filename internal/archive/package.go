@@ -23,13 +23,14 @@ const (
 
 // Package is an in-memory .docx (OPC ZIP) with lazy XML DOM parsing.
 type Package struct {
-	mu       sync.RWMutex
-	rawFiles map[string][]byte
-	xmlDocs  map[string]*etree.Document
-	dirty    map[string]bool
-	order    []string
-	index    *anchor.Index
-	maxSize  int64
+	mu                 sync.RWMutex
+	rawFiles           map[string][]byte
+	xmlDocs            map[string]*etree.Document
+	dirty              map[string]bool
+	normalizedDocument bool
+	order              []string
+	index              *anchor.Index
+	maxSize            int64
 }
 
 // OpenOptions configures package opening.
@@ -174,6 +175,36 @@ func (p *Package) MarkDirty(partName string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.dirty[partName] = true
+	if partName == documentPart {
+		p.normalizedDocument = false
+	}
+}
+
+// MarkNormalizedDocumentDirty records a document edit whose modified XML
+// properties were already normalized at the point of mutation.
+func (p *Package) MarkNormalizedDocumentDirty() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.dirty[documentPart] = true
+	p.normalizedDocument = true
+}
+
+// VerifyPreservedParts compares the original and reopened package payloads
+// outside the main document part.
+func (p *Package) VerifyPreservedParts(reopened *Package) error {
+	if len(p.rawFiles) != len(reopened.rawFiles) {
+		return fmt.Errorf("archive verification: part count changed")
+	}
+	for name, data := range p.rawFiles {
+		if name == documentPart {
+			continue
+		}
+		got, exists := reopened.rawFiles[name]
+		if !exists || !bytes.Equal(data, got) {
+			return fmt.Errorf("archive verification: part %q changed", name)
+		}
+	}
+	return nil
 }
 
 // Document returns word/document.xml DOM (parsed if needed).
@@ -205,7 +236,9 @@ func (p *Package) Save(w io.Writer) error {
 				_ = zw.Close()
 				return fmt.Errorf("archive: dirty part %q has no DOM", name)
 			}
-			oxml.NormalizeElementOrder(doc)
+			if name != documentPart || !p.normalizedDocument {
+				oxml.NormalizeElementOrder(doc)
+			}
 			data, err := oxml.SerializeXML(doc)
 			if err != nil {
 				_ = zw.Close()

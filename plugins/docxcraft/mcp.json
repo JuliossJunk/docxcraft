@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "docxcraft": {
+      "type": "stdio",
+      "command": "${PLUGIN_ROOT}/bin/docxcraft.exe",
+      "args": ["mcp", "--transport", "stdio", "--whitelist", "mcp,inspect_review,apply_review"]
+    }
+  }
+}

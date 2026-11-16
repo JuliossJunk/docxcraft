@@ -29,6 +29,16 @@ func RunStdio(cfg *security.Config) error {
 }
 
 func registerTools(s *server.MCPServer, cfg *security.Config) {
+	s.AddTool(mcp.NewTool("inspect_review",
+		mcp.WithDescription("Read visible DOCX text and paragraph anchors, including table cells, for a tracked review. Returns the source SHA-256."),
+		mcp.WithInputSchema[inspectReviewArgs](),
+	), wrap(cfg, "inspect_review", handleInspectReview))
+
+	s.AddTool(mcp.NewTool("apply_review",
+		mcp.WithDescription("Apply an atomic batch of literal inline edits as Word tracked changes and save a verified new DOCX."),
+		mcp.WithInputSchema[applyReviewArgs](),
+	), wrap(cfg, "apply_review", handleApplyReview))
+
 	s.AddTool(mcp.NewTool("inspect_skeleton",
 		mcp.WithDescription("Return compact document skeleton with w14:paraId anchors"),
 		mcp.WithString("file_path", mcp.Required(), mcp.Description("Path to .docx inside sandbox")),

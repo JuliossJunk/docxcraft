@@ -143,6 +143,11 @@ func NormalizeElementOrder(doc *etree.Document) {
 	normalizeMatching(doc.Root(), "trPr", trPrOrder)
 }
 
+// NormalizeRunProperties normalizes properties of a newly created run.
+func NormalizeRunProperties(run *etree.Element) {
+	normalizeMatching(run, "rPr", rPrOrder)
+}
+
 func normalizeMatching(root *etree.Element, tag string, orderMap map[string]int) {
 	var walk func(*etree.Element)
 	walk = func(el *etree.Element) {

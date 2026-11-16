@@ -20,6 +20,9 @@ func EnsureW14Namespace(root *etree.Element) {
 	if root == nil {
 		return
 	}
+	if root.SelectAttr("xmlns:mc") == nil {
+		root.CreateAttr("xmlns:mc", NSMC)
+	}
 
 	if root.SelectAttr("xmlns:w14") == nil && root.SelectAttrValue("xmlns:w14", "") == "" {
 		// etree stores xmlns as regular attributes with the xmlns prefix in the name.

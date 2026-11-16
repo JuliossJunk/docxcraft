@@ -1,7 +1,6 @@
 package anchor
 
 import (
-	"crypto/rand"
 	"fmt"
 	"strings"
 
@@ -75,16 +74,38 @@ func EnsureAnchors(doc *etree.Document, location string, idx *Index) (mutated bo
 			existing[strings.TrimPrefix(id, tblPrefix)] = struct{}{}
 		}
 	}
+	// Reserve original IDs before allocating any missing IDs. Opening the same
+	// source again must give inspection and patching identical anchors.
+	var reserve func(*etree.Element)
+	reserve = func(el *etree.Element) {
+		if id := oxml.ParaID(el); isValidParaID(id) {
+			existing[id] = struct{}{}
+		}
+		for _, child := range el.ChildElements() {
+			reserve(child)
+		}
+	}
+	reserve(root)
+	var next uint32
+	allocate := func() string {
+		for {
+			next++
+			id := fmt.Sprintf("%08X", next)
+			if _, used := existing[id]; !used {
+				return id
+			}
+		}
+	}
 
 	var walk func(parent, el *etree.Element)
 	walk = func(parent, el *etree.Element) {
 		switch el.Tag {
 		case "p":
-			if changed := ensureParagraphAnchor(el, parent, location, idx, existing); changed {
+			if changed := ensureParagraphAnchor(el, parent, location, idx, existing, allocate); changed {
 				mutated = true
 			}
 		case "tbl":
-			if changed := ensureTableAnchor(el, parent, location, idx, existing); changed {
+			if changed := ensureTableAnchor(el, parent, location, idx, existing, allocate); changed {
 				mutated = true
 			}
 		}
@@ -107,11 +128,11 @@ func hasW14Namespace(root *etree.Element) bool {
 	return false
 }
 
-func ensureParagraphAnchor(el, parent *etree.Element, location string, idx *Index, existing map[string]struct{}) bool {
+func ensureParagraphAnchor(el, parent *etree.Element, location string, idx *Index, existing map[string]struct{}, allocate func() string) bool {
 	mutated := false
 	id := oxml.ParaID(el)
 	if !isValidParaID(id) || idTaken(idx, id) {
-		id = generateValidParaID(existing)
+		id = allocate()
 		oxml.SetParaID(el, id)
 		oxml.SetW14Attr(el, "textId", id)
 		mutated = true
@@ -127,7 +148,7 @@ func ensureParagraphAnchor(el, parent *etree.Element, location string, idx *Inde
 	return mutated
 }
 
-func ensureTableAnchor(el, parent *etree.Element, location string, idx *Index, existing map[string]struct{}) bool {
+func ensureTableAnchor(el, parent *etree.Element, location string, idx *Index, existing map[string]struct{}, allocate func() string) bool {
 	mutated := false
 	firstTR := firstChildByTag(el, "tr")
 	if firstTR == nil {
@@ -135,7 +156,7 @@ func ensureTableAnchor(el, parent *etree.Element, location string, idx *Index, e
 	}
 	rowID := oxml.ParaID(firstTR)
 	if !isValidParaID(rowID) || idTaken(idx, rowID) || idTaken(idx, tblPrefix+rowID) {
-		rowID = generateValidParaID(existing)
+		rowID = allocate()
 		oxml.SetParaID(firstTR, rowID)
 		mutated = true
 	}
@@ -191,23 +212,4 @@ func isValidParaID(id string) bool {
 		return false
 	}
 	return n < 0x80000000
-}
-
-func generateValidParaID(existing map[string]struct{}) string {
-	var b [4]byte
-	for {
-		_, _ = rand.Read(b[:])
-		b[0] &= 0x7F
-		id := fmt.Sprintf("%02X%02X%02X%02X", b[0], b[1], b[2], b[3])
-		if id == "00000000" {
-			continue
-		}
-		if _, exists := existing[id]; exists {
-			continue
-		}
-		if _, exists := existing[tblPrefix+id]; exists {
-			continue
-		}
-		return id
-	}
 }

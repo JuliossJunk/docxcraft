@@ -213,6 +213,31 @@ func (c *Config) AssertFileSize(path string) error
 
 ---
 
+### 4.5. Review in Codex
+
+`inspect_review` takes `file_path`, an optional literal `query`, and an optional
+`offset` from the previous result. It returns the source SHA-256 and a page of
+main-story paragraphs with visible text, anchors, heading context, and table
+coordinates where applicable. Repeat the same query with `next_offset`.
+
+`apply_review` takes `file_path`, `source_sha256`, and an array of `edits`.
+Each edit supplies a literal `quote` and `text`. The optional `anchor_id`,
+`prefix`, and `suffix` disambiguate the quote. Context is outside the edit.
+By default the quote is replaced. Empty replacement text deletes it. Set
+`position` to `before` or `after` to insert. With an anchor and an empty quote
+these positions refer to the start or end of the paragraph. Set `all` to
+authorize multiple matches. Every selection is resolved against the original
+document. Any invalid selection or overlap fails the entire batch before publication.
+
+Optional `author` sets the Word revision author. Optional `output_path` must
+name a new DOCX. The default is an available `-reviewed` copy beside the source.
+The server reopens the staged file, compares unchanged ZIP payloads, and
+checks the expected revisions before publishing it. The response gives the
+output path and the text changes by anchor and edit number.
+
+The review tools use `inspect_review` and `apply_review` as whitelist keys.
+`apply_review` requires writable mode. Both enforce sandbox and size limits.
+
 ## 5. CLI (`cmd/docxcraft`)
 
 Библиотека: **Cobra**. Корневые persistent flags = security flags из §3.1.

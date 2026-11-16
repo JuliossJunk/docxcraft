@@ -91,6 +91,7 @@ func (p *Package) SetDocument(doc *etree.Document) {
 	defer p.mu.Unlock()
 	p.xmlDocs[documentPart] = doc
 	p.dirty[documentPart] = true
+	p.normalizedDocument = false
 }
 
 // RebuildIndex clears and rebuilds the anchor index for word/document.xml.

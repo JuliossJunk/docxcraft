@@ -2,6 +2,9 @@
 
 [Русский](README.ru.md)
 
+[DocxCraft for Codex on Windows](plugins/docxcraft/README.md) reviews local Word
+documents and saves verified copies with tracked changes.
+
 Agent harness (MCP server + CLI + Go SDK) for **deterministic** generation, targeted editing, and linting of Microsoft Word (`.docx`) documents.
 
 Core idea: edit OpenXML **without losing layout** (in-memory ZIP + DOM), address paragraphs via stable `w14:paraId` anchors, and drive formatting from YAML style profiles (GOST / Corporate / Legal).

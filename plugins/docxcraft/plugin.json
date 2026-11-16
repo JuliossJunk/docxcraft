@@ -1,0 +1,16 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "docxcraft",
+  "version": "0.1.0",
+  "description": "Review local Word documents and save verified copies with tracked changes.",
+  "extensions": {
+    "com.openai": {
+      "requires_local_executor": true,
+      "interface": {
+        "displayName": "DocxCraft",
+        "shortDescription": "Review and edit local Word documents",
+        "longDescription": "Inspect paragraphs and table cells, then apply an atomic batch of tracked Word revisions to a verified copy."
+      }
+    }
+  }
+}
